@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Weather App</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/x-icon" href="C:\Users\peddi\Downloads\weather.png">
+</head>
+<body>
+  <div class="card">
+    <div class="search">
+      <input type="text" placeholder="Enter city name" spellcheck="false" />
+      <button id="searchBtn"><img src="images/search.png" alt="Search" /></button>
+    </div>
+
+    <div class="weather" style="display: none;">
+      <img src="images/clear.png" class="weather-icon" alt="Weather Icon" />
+      <h1 class="temp">22°C</h1>
+      <h2 class="city">New York</h2>
+
+      <div class="details">
+        <div class="col">
+          <img src="images/humidity.png" alt="Humidity Icon" />
+          <p class="humidity">50%</p>
+          <p>Humidity</p>
+        </div>
+
+        <div class="col">
+          <img src="images/wind.png" alt="Wind Icon" />
+          <p class="wind">15 km/h</p>
+          <p>Wind Speed</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const apiKey = "671552ed0a83d9281238d13fe1b64015";
+    const apiUrl = "https://api.openweathermap.org/data/2.5/weather?units=metric&q=";
+
+    const searchBox = document.querySelector(".search input");
+    const searchBtn = document.getElementById("searchBtn");
+    const weatherIcon = document.querySelector(".weather-icon");
+    const weatherSection = document.querySelector(".weather");
+    let isFetching = false;
+
+    async function checkWeather(city) {
+      if (isFetching) return; // Prevent multiple API calls
+      isFetching = true;
+      searchBtn.disabled = true;
+      searchBtn.style.opacity = "0.5";
+
+      try {
+        const response = await fetch(`${apiUrl}${encodeURIComponent(city)}&appid=${apiKey}`);
+        if (!response.ok) {
+          if (response.status === 404) throw new Error("City not found");
+          if (response.status === 401) throw new Error("Invalid API key");
+          throw new Error("Network error, please try again later");
+        }
+
+        const data = await response.json();
+
+        // Update UI
+        document.querySelector(".city").textContent = data.name;
+        document.querySelector(".temp").textContent = Math.round(data.main.temp) + "°C";
+        document.querySelector(".humidity").textContent = data.main.humidity + "%";
+        document.querySelector(".wind").textContent = data.wind.speed + " km/h";
+
+        // Update weather icon
+        const weather = data.weather[0].main.toLowerCase();
+        const iconMap = {
+          clouds: "images/clouds.png",
+          clear: "images/clear.png",
+          rain: "images/rain.png",
+          drizzle: "images/drizzle.png",
+          snow: "images/snow.png",
+          mist: "images/mist.png",
+          smoke: "images/mist.png",
+          haze: "images/mist.png",
+          fog: "images/mist.png"
+        };
+        weatherIcon.src = iconMap[weather] || "images/clear.png";
+        
+        // Show weather section
+        weatherSection.style.display = "block";
+      } catch (error) {
+        alert(error.message || "An error occurred. Please try again.");
+        weatherSection.style.display = "none";
+      } finally {
+        isFetching = false;
+        searchBtn.disabled = false;
+        searchBtn.style.opacity = "1";
+      }
+    }
+
+    // Event listeners
+    searchBtn.addEventListener("click", () => {
+      const city = searchBox.value.trim();
+      if (city && /^[a-zA-Z\s]+$/.test(city)) {
+        checkWeather(city);
+      } else {
+        alert("Please enter a valid city name (letters and spaces only).");
+      }
+    });
+
+    searchBox.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        const city = searchBox.value.trim();
+        if (city && /^[a-zA-Z\s]+$/.test(city)) {
+          checkWeather(city);
+        } else {
+          alert("Please enter a valid city name (letters and spaces only).");
+        }
+      }
+    });
+
+    // // Load default city on page load
+    // window.addEventListener("load", () => {
+    //   checkWeather("London");
+    // });
+  </script>
+</body>
+</html>
